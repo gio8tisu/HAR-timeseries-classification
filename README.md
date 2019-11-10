@@ -15,7 +15,7 @@ attributes fingerprints in time-series of sensor data, i.e. attribute-specific p
 that can be used to infer gender or personality of the data subjects in addition
 to their activities.
 
-### Analysis ideas
+### Analysis
 
 * Correlations
 * Metadata (classes, gender, age, ...)
@@ -28,6 +28,10 @@ to their activities.
 * Wavelet transform
 * Dynamic time warping
 * Global alignment kernel (SVM)
+
+### Feature selection
+
+??
 
 ## Classification
 
