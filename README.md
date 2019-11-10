@@ -18,6 +18,7 @@ to their activities.
 ### Analysis ideas
 
 * Correlations
+* Metadata (classes, gender, age, ...)
 * Fourier transform
 * Wavelet transform
 
@@ -34,11 +35,11 @@ to their activities.
 
 Feature extraction methods will be compared using this classification method.
 
-Possible candidates are naive bayes, ...
+Possible candidates are naive bayes, logistic regresion, ...
 
 ### Advanced methods
 
-SVM, kNN, classification trees, ...
+SVM, kNN, classification trees, MLP, ...
 
 ### Ensemble methods
 
