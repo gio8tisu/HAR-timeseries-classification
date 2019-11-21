@@ -15,9 +15,10 @@ attributes fingerprints in time-series of sensor data, i.e. attribute-specific p
 that can be used to infer gender or personality of the data subjects in addition
 to their activities.
 
-### Analysis ideas
+### Analysis
 
 * Correlations
+* Metadata (classes, gender, age, ...)
 * Fourier transform
 * Wavelet transform
 
@@ -28,17 +29,21 @@ to their activities.
 * Dynamic time warping
 * Global alignment kernel (SVM)
 
+### Feature selection
+
+??
+
 ## Classification
 
 ### Baseline
 
 Feature extraction methods will be compared using this classification method.
 
-Possible candidates are naive bayes, ...
+Possible candidates are naive bayes, logistic regresion, ...
 
 ### Advanced methods
 
-SVM, kNN, classification trees, ...
+SVM, kNN, classification trees, MLP, ...
 
 ### Ensemble methods
 
