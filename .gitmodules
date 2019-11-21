@@ -1,0 +1,3 @@
+[submodule "tslearn"]
+	path = tslearn
+	url = https://github.com/rtavenar/tslearn.git
