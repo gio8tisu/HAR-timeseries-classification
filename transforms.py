@@ -23,17 +23,17 @@ def stft(signal: np.ndarray, window_size=256, copy=True, pad=True):
         signal = np.copy(signal)
 
     # Zero-pad or truncate if necessary.
-    quotient, remainder = divmod(signal.shape[0], window_size)
+    windows, remainder = divmod(signal.shape[0], window_size)
     if remainder != 0:
         if pad:
-            signal = np.pad(signal,
-                ((0, window_size * (quotient + 1) - signal.shape[0]), (0, 0)))
-            # Reshape into "windowed view".
-            signal = signal.reshape((quotient + 1, window_size, -1))
+            padding = window_size * (windows + 1) - signal.shape[0]
+            signal = np.pad(signal, ((0, padding), (0, 0)))
+            windows += 1
         else:
-            signal = signal[:(window_size * quotient),:]
-            # Reshape into "windowed view".
-            signal = signal.reshape((quotient, window_size, -1))
+            signal = signal[:(window_size * windows), :]
+
+    # Reshape into "windowed view".
+    signal = signal.reshape((windows, window_size, -1))
 
     # Compute FFT for each channel.
     signal_stft = np.empty_like(signal)
