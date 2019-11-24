@@ -3,7 +3,7 @@
 import numpy as np
 
 
-def stft(signal: np.ndarray, window_size=256, copy=True):
+def stft(signal: np.ndarray, window_size=256, copy=True, pad=True):
     """Return the short time Fourier transform of signal.
 
     :param signal: numpy array of shape (L, N).
@@ -13,7 +13,8 @@ def stft(signal: np.ndarray, window_size=256, copy=True):
 
     Divide signal into chunks of length window_size and compute
     their Fourier transforms. If signal's length is not a multiple
-    of window_size it will be filled with zeroes.
+    of window_size it will be filled with zeroes if pad is True
+    and truncated otherwise.
     """
     assert isinstance(signal, np.ndarray)
     assert len(signal.shape) == 2
@@ -21,18 +22,20 @@ def stft(signal: np.ndarray, window_size=256, copy=True):
     if copy:
         signal = np.copy(signal)
 
-    # Zero-pad if necessary.
+    # Zero-pad or truncate if necessary.
     quotient, remainder = divmod(signal.shape[0], window_size)
     if remainder != 0:
-        signal = np.pad(
-            signal,
-            ((0, window_size * (quotient + 1) - signal.shape[0]), (0, 0))
-        )
+        if pad:
+            signal = np.pad(signal,
+                ((0, window_size * (quotient + 1) - signal.shape[0]), (0, 0)))
+            # Reshape into "windowed view".
+            signal = signal.reshape((quotient + 1, window_size, -1))
+        else:
+            signal = signal[:(window_size * quotient),:]
+            # Reshape into "windowed view".
+            signal = signal.reshape((quotient, window_size, -1))
 
-    # Reshape into "windowed view".
-    signal = signal.reshape((quotient + 1, window_size, -1))
-
-    # TODO Compute FFT for each channel.
+    # Compute FFT for each channel.
     signal_stft = np.empty_like(signal)
     for c in range(signal.shape[2]):
         signal_stft[..., c] = np.absolute(np.fft.fft(signal[..., c]))
