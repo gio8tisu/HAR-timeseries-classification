@@ -9,6 +9,7 @@ def stft(signal: np.ndarray, window_size=256, copy=True, pad=True):
     :param signal: numpy array of shape (L, N).
     :param window_size: window length.
     :param copy: whether to make a copy of signal.
+    :param pad: whether to zero-pad input (if True) or truncate (if False).
     :return: numpy array of shape (M, window_size, N).
 
     Divide signal into chunks of length window_size and compute
