@@ -68,11 +68,12 @@ class HARDataset:
 class HARDatasetCrops(HARDataset):
 
     def __init__(self, data_root, length, discard_start, discard_end,
-                 unwrapped_attitude=False):
+                 unwrapped_attitude=False, padding_mode="edge"):
         super().__init__(data_root, unwrapped_attitude=unwrapped_attitude)
         self.length = length
         self.discard_start = discard_start
         self.discard_end = discard_end
+        self.padding_mode = padding_mode
 
         self.crops = self.get_crops()
 
@@ -88,7 +89,7 @@ class HARDatasetCrops(HARDataset):
             # Zero-padding.
             windows, remainder = divmod(signal.shape[0], self.length)
             padding = self.length * (windows + 1) - signal.shape[0]
-            signal = np.pad(signal, ((0, padding), (0, 0)))
+            signal = np.pad(signal, ((0, padding), (0, 0)), self.padding_mode)
             # Obtain crops from <discard_start> to <discard-end>.
             for i in range(0, signal.shape[0], self.length):
                 crop = signal[i:(i + self.length)]
@@ -108,6 +109,6 @@ class HARDatasetCrops(HARDataset):
 
 
 if __name__ == '__main__':
-    dataset = HARDatasetCrops('motionsense-dataset', 256, 10, 10)
+    dataset = HARDatasetCrops('motionsense-dataset', 256, 10, 10, True)
     for item in iter(dataset):
         assert item[0].shape == (256, 12)
