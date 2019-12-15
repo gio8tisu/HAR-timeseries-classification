@@ -66,9 +66,21 @@ class HARDataset:
 
 
 class HARDatasetCrops(HARDataset):
+    """Dataset with fixed-length crops.
+
+    Args:
+        data_root -- string. Path to data directory.
+        length -- int. Crops length.
+        discard_start -- int. Number of samples to discard from start.
+        discard_end -- int. Number of samples to discard from end.
+        unwrapped_attitude -- bool. Whether to unwrap attitude signals.
+        padding_mode -- None or string. If None, the samples not fitting in
+                integer number of windows will be discarded. If string,
+                the value will be passed to numpy's pad function.
+    """
 
     def __init__(self, data_root, length, discard_start, discard_end,
-                 unwrapped_attitude=False, padding_mode="edge"):
+                 unwrapped_attitude=True, padding_mode=None):
         super().__init__(data_root, unwrapped_attitude=unwrapped_attitude)
         self.length = length
         self.discard_start = discard_start
@@ -86,10 +98,14 @@ class HARDatasetCrops(HARDataset):
             signal = csv2numpy(file)
             # Crop start and end.
             signal = signal[self.discard_start:(signal.shape[0] - self.discard_end)]
-            # Zero-padding.
             windows, remainder = divmod(signal.shape[0], self.length)
-            padding = self.length * (windows + 1) - signal.shape[0]
-            signal = np.pad(signal, ((0, padding), (0, 0)), self.padding_mode)
+            if self.padding_mode and remainder != 0:
+                # Apply padding with given padding mode.
+                padding = self.length * (windows + 1) - signal.shape[0]
+                signal = np.pad(signal, ((0, padding), (0, 0)), self.padding_mode)
+            elif self.padding_mode is None:
+                # Crop the end.
+                signal = signal[:(self.length * windows)]
             # Obtain crops from <discard_start> to <discard-end>.
             for i in range(0, signal.shape[0], self.length):
                 crop = signal[i:(i + self.length)]
