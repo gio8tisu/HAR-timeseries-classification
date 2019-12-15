@@ -1,6 +1,7 @@
 """Module for data-related stuff."""
 
 import pathlib
+import csv
 
 import numpy as np
 
@@ -39,26 +40,40 @@ class HARDataset:
         "userAcceleration.z"
     ]
 
-    def __init__(self, data_root, unwrapped_attitude=False):
+    def __init__(self, data_root, unwrapped_attitude=False,
+                 metadata_file=None):
         self.data_root = pathlib.Path(data_root)
         self.files = []
         self.unwrapped_attitude = unwrapped_attitude
+        self.metadata = {}  # Dictionary with participant codes as keys.
 
-        for csv in self.data_root.glob("**/*.csv"):
-            class_ = str(csv.parent.stem)[:3]
+        # Save each CSV file and infer class from filename.
+        for csv_ in self.data_root.glob("**/*.csv"):
+            class_ = str(csv_.parent.stem)[:3]
             if class_ in self.CLASSES.keys():
-                self.files.append([csv, class_])
+                self.files.append([csv_, class_])
+
+        # Read metadata form given file.
+        if metadata_file:
+            with open(metadata_file, newline="") as metadata:
+                csv_reader = csv.reader(metadata)
+                next(csv_reader, None)  # skip the headers
+                for row in csv_reader:
+                    self.metadata[row[0]] = list(map(int, row[1:]))
 
     def __getitem__(self, item):
         file_, class_ = self.files[item]
-        if not self.unwrapped_attitude:
-            return csv2numpy(file_), class_
-
-        # Unwrap attitude signals.
         signals = csv2numpy(file_)
-        for i in range(3):
-            signals[:, i] = np.unwrap(signals[:, i])
 
+        if self.unwrapped_attitude:
+            # Unwrap attitude signals.
+            for i in range(3):
+                signals[:, i] = np.unwrap(signals[:, i])
+
+        if self.metadata:
+            # Read metadata and return as extra element.
+            metadata = self.metadata[file_.stem.split("_")[1]]
+            return signals, class_, metadata
         return signals, class_
 
     def __len__(self):
@@ -80,8 +95,10 @@ class HARDatasetCrops(HARDataset):
     """
 
     def __init__(self, data_root, length, discard_start, discard_end,
-                 unwrapped_attitude=True, padding_mode=None):
-        super().__init__(data_root, unwrapped_attitude=unwrapped_attitude)
+                 unwrapped_attitude=True, padding_mode=None,
+                 metadata_file=None):
+        super().__init__(data_root, unwrapped_attitude=unwrapped_attitude,
+                         metadata_file=metadata_file)
         self.length = length
         self.discard_start = discard_start
         self.discard_end = discard_end
@@ -113,7 +130,12 @@ class HARDatasetCrops(HARDataset):
                     # Unwrap phase of first 3 features (attitude signals).
                     for s in range(3):
                         crop[:, s] = np.unwrap(crop[:, s])
-                crops.append([crop, class_])
+                if self.metadata:
+                    # Read metadata and return as extra element.
+                    metadata = self.metadata[file.stem.split("_")[1]]
+                    crops.append([crop, class_, metadata])
+                else:
+                    crops.append([crop, class_])
 
         return crops
 
