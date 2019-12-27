@@ -22,7 +22,8 @@ def classify_time_series(ts, clf, window_length, metadata=None):
         crop = ts[w:(w + window_length)]
         if metadata is not None:
             crop = np.hstack([crop, metadata])
-        serie.append(clf.predict(crop))
+        if len(crop)==cut:
+            serie.append(clf.predict(crop))
     return mode(serie)
 
 
