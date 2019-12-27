@@ -9,5 +9,6 @@ def classify_time_series(ts, clf, cut, metadata=None):
         crop = ts[w:(w + cut)]
         if metadata is not None:
             crop = np.hstack([crop, metadata])
-        serie.append(clf.predict(crop))
+        if len(crop)==cut:
+            serie.append(clf.predict(crop))
     return mode(serie)
