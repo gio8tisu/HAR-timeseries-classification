@@ -22,7 +22,7 @@ def classify_time_series(ts, clf, window_length, metadata=None):
         crop = ts[w:(w + window_length)]
         if metadata is not None:
             crop = np.hstack([crop, metadata])
-        if len(crop)==cut:
+        if len(crop) == window_length:
             serie.append(clf.predict(crop))
     return mode(serie)
 
@@ -31,6 +31,8 @@ def make_sklearn_dataset(dataset):
     """Return features and class matrices from dataset.
 
     :type dataset: HARDataset
+
+    TODO: define different "kinds" of features.
     """
     try:
         # Unpack metadata.
