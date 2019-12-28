@@ -142,6 +142,15 @@ class FindPeaksTransform(BaseEstimator, TransformerMixin):
         return self
 
 
+class MeanTransform(BaseEstimator, TransformerMixin):
+
+    def fit(self, X, y=None, **fit_params):
+        return self
+
+    def transform(self, X, y=None, **fit_params):
+        return X.mean(axis=1, keepdims=True)
+
+
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
