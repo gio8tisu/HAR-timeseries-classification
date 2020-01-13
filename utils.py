@@ -21,9 +21,11 @@ def classify_time_series(ts, clf, window_length, metadata=None):
     for w in range(0, ts.shape[0], window_length):
         crop = ts[w:(w + window_length)]
         if metadata is not None:
-            crop = np.hstack([crop, metadata])
-        if len(crop) == window_length:
-            serie.append(clf.predict(crop))
+            crop = np.concatenate([crop, metadata])
+        if crop.shape[0] == (window_length if metadata is None
+                             else window_length + len(metadata)):
+            serie.append(clf.predict(crop.reshape((1, -1))).item())
+
     return mode(serie)
 
 
