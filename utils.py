@@ -2,67 +2,90 @@ from statistics import mode
 import abc
 
 import numpy as np
-from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.base import BaseEstimator
 
 from dataset import HARDataset
 
 
-def classify_time_series(ts, clf, window_length, metadata=None):
-    """Return predicted class of time-series (ts).
-
-    Predicts class for each window and return the
-    most represented class.
-
-    :type ts: np.ndarray
-    :type clf: BaseEstimator
-    :type window_length: int
-    :type metadata: list or None.
-    """
-    serie = []
-    for i, w in enumerate(range(0, ts.shape[0], window_length)):
-        if (i + 1) * window_length > ts.shape[0]:
-            break
-        crop_ = ts[w:(w + window_length)]
-        crop = crop_.T.reshape((1, -1))
-        if metadata is not None:
-            crop = np.hstack([crop, metadata])
-        serie.append(clf.predict(crop.reshape((1, -1))).item())
-
-    return mode(serie)
-
-
 class TimeSeriesClassifier(metaclass=abc.ABCMeta):
-    def __init__(self, classifier, window_length):
-        super().__init__()
+    """
+
+    :type classifier: BaseEstimator
+    :type window_length: int
+    """
+
+    def __init__(self, classifier, window_length, overlap=0):
         self.window_length = window_length
         self.classifier = classifier
+        self.overlap = overlap
 
     def predict(self, dataset):
+        """Return predicted classes for dataset time-series.
+
+        :type dataset: HARDataset.
+        """
         y_pred = []
-        for x, _, meta in dataset:
-            x = np.hstack([x[:, :-6], np.linalg.norm(x[:, -6:-3], axis=1, keepdims=True),
+        for sample in dataset:
+            if len(sample) == 3:
+                x, _, meta = sample
+            else:
+                x, _ = sample
+                meta = None
+            x = np.hstack([x[:, :-6],
+                           np.linalg.norm(x[:, -6:-3], axis=1, keepdims=True),
                            np.linalg.norm(x[:, -3:], axis=1, keepdims=True)])
-            y_pred.append(classify_time_series(x, self.classifier, 256, [meta]))
-        return y_pred
+            if meta:
+                y_pred.append(self.classify_time_series(x, [meta]))
+            else:
+                y_pred.append(self.classify_time_series(x))
+        return np.array(y_pred)
 
     @abc.abstractmethod
-    def classify_time_series(self, ts, clf, window_length, metadata=None):
+    def classify_time_series(self, ts, metadata=None):
+        """Return predicted class of time-series (ts).
+
+        :type ts: np.ndarray
+        :type metadata: list or None.
+        """
         pass
 
 
 class ModeTimeSeriesClassifier(TimeSeriesClassifier):
-    def classify_time_series(self, ts, clf, window_length, metadata=None):
-        serie = []
-        for i, w in enumerate(range(0, ts.shape[0], window_length)):
-            if (i + 1) * window_length > ts.shape[0]:
-                break
-            crop_ = ts[w:(w + window_length)]
+
+    def classify_time_series(self, ts, metadata=None):
+        """Predicts class for each window and return the most represented class.
+        """
+        predictions = []
+        w = 0
+        while w + self.window_length < ts.shape[0]:
+            crop_ = ts[w:(w + self.window_length)]
             crop = crop_.T.reshape((1, -1))
             if metadata is not None:
                 crop = np.hstack([crop, metadata])
-            serie.append(clf.predict(crop.reshape((1, -1))).item())
+            predictions.append(
+                self.classifier.predict(crop.reshape((1, -1))).item())
+            w += self.window_length - self.overlap
 
-        return mode(serie)
+        return mode(predictions)
+
+
+class SumTimeSeriesClassifier(TimeSeriesClassifier):
+
+    def classify_time_series(self, ts, metadata=None):
+        """Predicts class for each window and return the most represented class.
+        """
+        predictions = []
+        w = 0
+        while w + self.window_length < ts.shape[0]:
+            crop_ = ts[w:(w + self.window_length)]
+            crop = crop_.T.reshape((1, -1))
+            if metadata is not None:
+                crop = np.hstack([crop, metadata])
+            predictions.append(
+                self.classifier.predict_proba(crop.reshape((1, -1))).item())
+            w += self.window_length - self.overlap
+
+        return np.array(predictions).sum(axis=0).argmax()
 
 
 def make_sklearn_dataset(dataset):
